@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LeakWatch 🔍</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔍 LeakWatch</h1>
+      <p class="subtitle">Detecta credenciales expuestas en repositorios públicos de GitHub</p>
+    </header>
+
+    <div class="scanner-box">
+      <div class="input-group">
+        <input type="text" id="owner" placeholder="Usuario u organización (ej: microsoft)" />
+        <input type="text" id="repo" placeholder="Repositorio (ej: vscode)" />
+        <button id="scanBtn" onclick="startScan()">⚡ Escanear</button>
+      </div>
+    </div>
+
+    <div id="status" class="status hidden"></div>
+
+    <div id="results" class="results hidden">
+      <h2>Resultados <span id="totalBadge" class="badge"></span></h2>
+      <div id="findings"></div>
+    </div>
+  </div>
+
+  <script>
+    async function startScan() {
+      const owner = document.getElementById("owner").value.trim();
+      const repo = document.getElementById("repo").value.trim();
+      const status = document.getElementById("status");
+      const results = document.getElementById("results");
+      const findings = document.getElementById("findings");
+      const btn = document.getElementById("scanBtn");
+
+      if (!owner || !repo) {
+        alert("Por favor ingresa usuario y repositorio");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "⏳ Escaneando...";
+      status.className = "status";
+      status.textContent = `🔍 Escaneando ${owner}/${repo}...`;
+      results.className = "results hidden";
+
+      try {
+        const res = await fetch("/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ owner, repo }),
+        });
+
+        const data = await res.json();
+
+        document.getElementById("totalBadge").textContent = data.total;
+        findings.innerHTML = "";
+
+        if (data.total === 0) {
+          findings.innerHTML = `<div class="no-findings">✅ No se encontraron credenciales expuestas</div>`;
+        } else {
+          data.findings.forEach((f) => {
+            findings.innerHTML += `
+              <div class="finding-card">
+                <div class="finding-type">⚠️ ${f.type}</div>
+                <div class="finding-file">📄 ${f.file}</div>
+                <a href="${f.url}" target="_blank" class="finding-link">Ver en GitHub →</a>
+              </div>`;
+          });
+        }
+
+        results.className = "results";
+        status.className = "status hidden";
+
+      } catch (err) {
+        status.textContent = "❌ Error al escanear. Verifica el repositorio.";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "⚡ Escanear";
+      }
+    }
+  </script>
+</body>
+</html>
