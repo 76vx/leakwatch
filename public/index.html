@@ -7,33 +7,44 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="grid-overlay"></div>
+
   <div class="container">
     <header>
-      <h1>🔍 LeakWatch</h1>
-      <p class="subtitle">Detecta credenciales expuestas en repositorios públicos de GitHub</p>
+      <div class="logo">
+        <span style="font-size:2.5rem">🔍</span>
+        <h1>LeakWatch</h1>
+      </div>
+      <p class="subtitle">// Secret credential scanner for GitHub repos //</p>
     </header>
 
     <div class="scanner-box">
       <div class="input-group">
-        <input type="text" id="owner" placeholder="Usuario u organización (ej: microsoft)" />
-        <input type="text" id="repo" placeholder="Repositorio (ej: vscode)" />
-        <button id="scanBtn" onclick="startScan()">⚡ Escanear</button>
+        <input type="text" id="owner" placeholder="Usuario u organización" />
+        <input type="text" id="repo" placeholder="Repositorio" />
+        <button id="scanBtn" onclick="startScan()">⚡ Scan</button>
       </div>
     </div>
 
-    <div id="status" class="status hidden"></div>
+    <div id="status" class="status hidden">
+      <div class="scanning-line"></div>
+      <span id="statusText">Escaneando...</span>
+    </div>
 
     <div id="results" class="results hidden">
-      <h2>Resultados <span id="totalBadge" class="badge"></span></h2>
+      <h2>// Resultados <span id="totalBadge" class="badge"></span></h2>
       <div id="findings"></div>
     </div>
   </div>
+
+  <div class="signature">By Astra</div>
 
   <script>
     async function startScan() {
       const owner = document.getElementById("owner").value.trim();
       const repo = document.getElementById("repo").value.trim();
       const status = document.getElementById("status");
+      const statusText = document.getElementById("statusText");
       const results = document.getElementById("results");
       const findings = document.getElementById("findings");
       const btn = document.getElementById("scanBtn");
@@ -44,9 +55,9 @@
       }
 
       btn.disabled = true;
-      btn.textContent = "⏳ Escaneando...";
+      btn.textContent = "⏳ Scanning...";
       status.className = "status";
-      status.textContent = `🔍 Escaneando ${owner}/${repo}...`;
+      statusText.textContent = `Escaneando ${owner}/${repo}...`;
       results.className = "results hidden";
 
       try {
@@ -57,19 +68,18 @@
         });
 
         const data = await res.json();
-
         document.getElementById("totalBadge").textContent = data.total;
         findings.innerHTML = "";
 
         if (data.total === 0) {
-          findings.innerHTML = `<div class="no-findings">✅ No se encontraron credenciales expuestas</div>`;
+          findings.innerHTML = `<div class="no-findings">✅ &nbsp; No se encontraron credenciales expuestas</div>`;
         } else {
           data.findings.forEach((f) => {
             findings.innerHTML += `
               <div class="finding-card">
-                <div class="finding-type">⚠️ ${f.type}</div>
-                <div class="finding-file">📄 ${f.file}</div>
-                <a href="${f.url}" target="_blank" class="finding-link">Ver en GitHub →</a>
+                <div class="finding-type">⚠️ &nbsp;${f.type}</div>
+                <div class="finding-file">📄 &nbsp;${f.file}</div>
+                <a href="${f.url}" target="_blank" class="finding-link">→ Ver en GitHub</a>
               </div>`;
           });
         }
@@ -78,10 +88,10 @@
         status.className = "status hidden";
 
       } catch (err) {
-        status.textContent = "❌ Error al escanear. Verifica el repositorio.";
+        statusText.textContent = "❌ Error al escanear. Verifica el repositorio.";
       } finally {
         btn.disabled = false;
-        btn.textContent = "⚡ Escanear";
+        btn.textContent = "⚡ Scan";
       }
     }
   </script>
